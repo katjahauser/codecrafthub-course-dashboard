@@ -1,0 +1,16 @@
+[
+  {
+    "id": "course-001",
+    "title": "Python Fundamentals",
+    "description": "Learn the core concepts of Python programming.",
+    "targetEndDate": "2026-11-30",
+    "status": "In progress"
+  },
+  {
+    "id": "course-002",
+    "title": "REST API Design",
+    "description": "Learn how to design and build REST APIs.",
+    "targetEndDate": "2027-01-15",
+    "status": "Not started"
+  }
+]
