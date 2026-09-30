@@ -36,6 +36,14 @@ def find_course(course_id):
 
 def create_course(course):
     courses = read_courses()
+    course_numbers = [
+        int(existing_course["id"][len("course-"):])
+        for existing_course in courses
+        if isinstance(existing_course.get("id"), str)
+        and existing_course["id"].startswith("course-")
+        and existing_course["id"][len("course-"):].isdigit()
+    ]
+    course["id"] = f"course-{max(course_numbers, default=0) + 1:03d}"
     courses.append(course)
     write_courses(courses)
 

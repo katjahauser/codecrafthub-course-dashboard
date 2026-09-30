@@ -1,5 +1,4 @@
 from datetime import date
-from uuid import uuid4
 
 from flask import Blueprint, jsonify, request
 
@@ -92,14 +91,13 @@ def add_course():
         return jsonify({"error": validation_error}), 400
 
     course = {
-        "id": f"course-{uuid4().hex[:8]}",
         "title": data["title"].strip(),
         "description": data["description"].strip(),
         "targetEndDate": data["targetEndDate"],
         "status": data["status"],
     }
 
-    create_course(course)
+    course = create_course(course)
 
     return jsonify(course), 201
 
