@@ -12,12 +12,5 @@
     "description": "Learn how to design and build REST APIs.",
     "targetEndDate": "2027-01-15",
     "status": "Not started"
-  },
-  {
-    "id": "course-003",
-    "title": "Flask Essentials",
-    "description": "Build web APIs with Python and Flask 3.1.0.",
-    "targetEndDate": "2026-12-25",
-    "status": "In progress"
   }
 ]

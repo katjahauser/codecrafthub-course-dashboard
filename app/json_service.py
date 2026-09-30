@@ -95,6 +95,8 @@ def update_course(course_id, updated_course):
 def delete_course(course_id):
     courses = read_courses()
 
+    title_of_removed_course = next((course["title"] for course in courses if course["id"] == course_id), None)
+
     filtered_courses = [
         course for course in courses
         if course["id"] != course_id
@@ -104,4 +106,4 @@ def delete_course(course_id):
         return False
 
     write_courses(filtered_courses)
-    return True
+    return f"The course with ID '{course_id}' has been deleted successfully."

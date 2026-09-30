@@ -162,8 +162,7 @@ def partially_update_course(course_id):
 @courses_bp.delete("/<course_id>")
 def remove_course(course_id):
     deleted = delete_course(course_id)
-
     if not deleted:
         return jsonify({"error": "Course not found"}), 404
 
-    return "", 204
+    return jsonify(deleted), 200
