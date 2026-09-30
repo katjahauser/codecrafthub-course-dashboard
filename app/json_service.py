@@ -52,6 +52,16 @@ def find_course(course_id):
 
 def create_course(course):
     courses = read_courses()
+    
+    if any(
+        existing_course.get("title", "").strip() == course["title"].strip()
+        and existing_course.get("description", "").strip()
+        == course["description"].strip()
+        for existing_course in courses
+    ):
+        return None
+        
+
     course_numbers = [
         int(existing_course["id"][len("course-"):])
         for existing_course in courses
@@ -60,6 +70,10 @@ def create_course(course):
         and existing_course["id"][len("course-"):].isdigit()
     ]
     course["id"] = f"course-{max(course_numbers, default=0) + 1:03d}"
+
+    for field, value in course.items():
+        course[field] = value.strip() if isinstance(value, str) else value
+
     courses.append(course)
     write_courses(courses)
 

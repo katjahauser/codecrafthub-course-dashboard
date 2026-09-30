@@ -98,6 +98,8 @@ def add_course():
     }
 
     course = create_course(course)
+    if course is None:
+        return jsonify({"error": "A course with the same title and/or description already exists."}), 409
 
     return jsonify(course), 201
 
