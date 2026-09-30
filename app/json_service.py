@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 DATA_FILE = (
-    Path(__file__).resolve().parents[2]
+    Path(__file__).resolve().parents[1]
     / "api"
     / "courses"
     / "courses.json"
