@@ -8,6 +8,22 @@ DATA_FILE = (
     / "courses"
     / "courses.json"
 )
+COURSE_FIELDS = ("id", "title", "description", "targetEndDate", "status")
+
+
+def order_course(course):
+    ordered_course = {
+        field: course[field]
+        for field in COURSE_FIELDS
+        if field in course
+    }
+    ordered_course.update(
+        (field, value)
+        for field, value in course.items()
+        if field not in ordered_course
+    )
+
+    return ordered_course
 
 
 def read_courses():
@@ -15,14 +31,14 @@ def read_courses():
         return []
 
     with DATA_FILE.open("r", encoding="utf-8") as file:
-        return json.load(file)
+        return [order_course(course) for course in json.load(file)]
 
 
 def write_courses(courses):
     DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
 
     with DATA_FILE.open("w", encoding="utf-8") as file:
-        json.dump(courses, file, indent=2)
+        json.dump([order_course(course) for course in courses], file, indent=2)
 
 
 def find_course(course_id):
@@ -47,7 +63,7 @@ def create_course(course):
     courses.append(course)
     write_courses(courses)
 
-    return course
+    return order_course(course)
 
 
 def update_course(course_id, updated_course):

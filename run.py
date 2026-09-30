@@ -5,6 +5,7 @@ from app.course_routes import courses_bp
 
 def create_app():
     app = Flask(__name__)
+    app.json.sort_keys = False
 
     app.register_blueprint(courses_bp, url_prefix="/api/courses")
 
