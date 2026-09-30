@@ -125,7 +125,7 @@ def replace_course(course_id):
         "status": data["status"],
     }
 
-    update_course(course_id, updated_course)
+    updated_course = update_course(course_id, updated_course)
 
     return jsonify(updated_course), 200
 

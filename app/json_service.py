@@ -87,7 +87,7 @@ def update_course(course_id, updated_course):
         if course["id"] == course_id:
             courses[index] = updated_course
             write_courses(courses)
-            return updated_course
+            return f"The course '{course['title']}' with ID '{course_id}' has been updated successfully."
 
     return None
 
