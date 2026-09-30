@@ -5,12 +5,5 @@
     "description": "Learn the core concepts of Python programming.",
     "targetEndDate": "2026-11-30",
     "status": "In progress"
-  },
-  {
-    "id": "course-002",
-    "title": "Flask Essentials",
-    "description": "Build web APIs with Python and Flask.",
-    "targetEndDate": "2026-12-20",
-    "status": "In progress"
   }
 ]

@@ -135,4 +135,4 @@ def delete_course(course_id):
         )
 
     write_courses(filtered_courses)
-    return f"The course with ID '{course_id}' has been deleted successfully."
+    return f"The course '{removed_course['title']}' with ID '{course_id}' has been deleted successfully."
