@@ -19,5 +19,12 @@
     "description": "Build web APIs with Python and Flask.",
     "targetEndDate": "2026-12-20",
     "status": "Not started"
+  },
+  {
+    "id": "course-004",
+    "title": "Flask Essentials",
+    "description": "Build web APIs with Python and Flask.",
+    "targetEndDate": "2026-12-20",
+    "status": "Not started"
   }
 ]

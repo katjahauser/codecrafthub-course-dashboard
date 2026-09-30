@@ -63,7 +63,7 @@ def create_course(course):
     courses.append(course)
     write_courses(courses)
 
-    return order_course(course)
+    return f"Successfully created course '{course['title']}' with ID '{course['id']}'."
 
 
 def update_course(course_id, updated_course):
