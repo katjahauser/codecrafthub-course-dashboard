@@ -8,9 +8,9 @@
   },
   {
     "id": "course-002",
-    "title": "REST API Design",
-    "description": "Learn how to design and build REST APIs.",
-    "targetEndDate": "2027-01-15",
-    "status": "Not started"
+    "title": "Flask Essentials",
+    "description": "Build web APIs with Python and Flask.",
+    "targetEndDate": "2026-12-20",
+    "status": "In progress"
   }
 ]

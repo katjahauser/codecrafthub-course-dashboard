@@ -41,6 +41,15 @@ def write_courses(courses):
         json.dump([order_course(course) for course in courses], file, indent=2)
 
 
+def _course_number(course_id):
+    prefix = "course-"
+    if not isinstance(course_id, str) or not course_id.startswith(prefix):
+        return None
+
+    number = course_id[len(prefix):]
+    return int(number) if number.isdigit() else None
+
+
 def find_course(course_id):
     courses = read_courses()
 
@@ -62,13 +71,11 @@ def create_course(course):
         return None
         
 
-    course_numbers = [
-        int(existing_course["id"][len("course-"):])
-        for existing_course in courses
-        if isinstance(existing_course.get("id"), str)
-        and existing_course["id"].startswith("course-")
-        and existing_course["id"][len("course-"):].isdigit()
-    ]
+    course_numbers = []
+    for existing_course in courses:
+        number = _course_number(existing_course.get("id"))
+        if number is not None:
+            course_numbers.append(number)
     course["id"] = f"course-{max(course_numbers, default=0) + 1:03d}"
 
     for field, value in course.items():
@@ -94,16 +101,38 @@ def update_course(course_id, updated_course):
 
 def delete_course(course_id):
     courses = read_courses()
-
-    title_of_removed_course = next((course["title"] for course in courses if course["id"] == course_id), None)
-
-    filtered_courses = [
-        course for course in courses
-        if course["id"] != course_id
-    ]
-
-    if len(filtered_courses) == len(courses):
+    removed_course = next(
+        (course for course in courses if course["id"] == course_id),
+        None,
+    )
+    if removed_course is None:
         return False
+
+    removed_number = _course_number(removed_course.get("id"))
+    numbered_courses = [
+        (number, course)
+        for course in courses
+        if (number := _course_number(course.get("id"))) is not None
+    ]
+    highest_number, highest_course = max(
+        numbered_courses,
+        key=lambda item: item[0],
+        default=(None, None),
+    )
+
+    filtered_courses = [course for course in courses if course is not removed_course]
+    if (
+        removed_number is not None
+        and highest_number is not None
+        and removed_number < highest_number
+    ):
+        highest_course["id"] = removed_course["id"]
+        filtered_courses.sort(
+            key=lambda course: (
+                _course_number(course.get("id")) is None,
+                _course_number(course.get("id")) or 0,
+            )
+        )
 
     write_courses(filtered_courses)
     return f"The course with ID '{course_id}' has been deleted successfully."
