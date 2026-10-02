@@ -125,8 +125,25 @@ def test_edit_course_with_legal_data_succeeds(client):
     response = client.put("/api/courses/1", json=update)
 
     assert response.status_code == 200
+    assert response.get_json() == (
+        'Successfully updated "title" to "Updated Course", '
+        '"description" to "Learn Python, Flask! Build/API?", '
+        '"target_date" to "2026-12-20" and "status" to "Not started".'
+    )
     assert json_service.read_courses()[0]["title"] == "Updated Course"
+    assert json_service.read_courses()[0]["status"] == "Not started"
     assert json_service.read_courses()[0]["created_at"] == original_created_at
+
+
+def test_put_with_missing_editable_fields_fails(client):
+    seed_course()
+
+    response = client.put("/api/courses/1", json={"title": "Updated Course"})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Missing required fields: description, status, target_date"
+    }
 
 
 @pytest.mark.parametrize("overrides", ILLEGAL_COURSE_CASES)
@@ -193,7 +210,58 @@ def test_partial_course_edit_succeeds(client):
     )
 
     assert response.status_code == 200
+    assert response.get_json() == (
+        'Successfully updated "title" to "Partially Updated Course".'
+    )
     assert json_service.read_courses()[0]["title"] == "Partially Updated Course"
+
+
+def test_partial_course_edit_lists_all_updated_fields(client):
+    seed_course()
+
+    response = client.patch(
+        "/api/courses/1",
+        json={"title": "New Title", "status": "Completed"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json() == (
+        'Successfully updated "title" to "New Title" and '
+        '"status" to "Completed".'
+    )
+
+
+@pytest.mark.parametrize("method, path", [
+    ("post", "/api/courses"),
+    ("put", "/api/courses/1"),
+    ("patch", "/api/courses/1"),
+])
+@pytest.mark.parametrize("field, value", [
+    ("id", 99),
+    ("created_at", "2026-01-01 00:00:00"),
+])
+def test_server_managed_fields_cannot_be_set(client, method, path, field, value):
+    if method != "post":
+        seed_course()
+    course_data = valid_course(**{field: value})
+
+    response = getattr(client, method)(path, json=course_data)
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": f'Field "{field}" cannot be set manually'
+    }
+
+
+def test_patch_requires_at_least_one_editable_field(client):
+    seed_course()
+
+    response = client.patch("/api/courses/1", json={})
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "At least one editable field must be provided"
+    }
 
 
 def test_missing_courses_file_is_created(client):

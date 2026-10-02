@@ -1,6 +1,7 @@
 import re
 from datetime import date
 from enum import Enum
+import json
 
 from flask import Blueprint, jsonify, request
 
@@ -36,11 +37,21 @@ REQUIRED_FIELDS = {
     "target_date",
     "status",
 }
+EDITABLE_FIELDS = ("title", "description", "target_date", "status")
+SERVER_MANAGED_FIELDS = {"id", "created_at"}
 
 
 def validate_course_data(data, partial=False):
     if not isinstance(data, dict):
         return "Request body must be a JSON object"
+
+    for field in SERVER_MANAGED_FIELDS:
+        if field in data:
+            return f'Field "{field}" cannot be set manually'
+
+    unknown_fields = data.keys() - REQUIRED_FIELDS
+    if unknown_fields:
+        return "Unsupported fields: " + ", ".join(sorted(unknown_fields))
 
     if not partial:
         missing_fields = REQUIRED_FIELDS - data.keys()
@@ -140,60 +151,52 @@ def add_course():
     return jsonify(course), 201
 
 
-@courses_bp.put("/<int:course_id>")
-def replace_course(course_id):
+def update_course_fields(course_id, partial):
     existing_course = find_course(course_id)
 
     if existing_course is None:
         return jsonify({"error": "Course not found"}), 404
 
     data = request.get_json(silent=True)
-    validation_error = validate_course_data(data)
+    validation_error = validate_course_data(data, partial=partial)
 
     if validation_error:
         return jsonify({"error": validation_error}), 400
 
-    updated_course = {
-        "id": course_id,
-        "title": data["title"].strip(),
-        "description": data["description"].strip(),
-        "target_date": data["target_date"],
-        "status": data["status"],
-        "created_at": existing_course["created_at"],
-    }
+    updated_fields = [field for field in EDITABLE_FIELDS if field in data]
+    if not updated_fields:
+        return jsonify({"error": "At least one editable field must be provided"}), 400
 
-    updated_course = update_course(course_id, updated_course)
+    updated_course = existing_course.copy()
+    for field in updated_fields:
+        value = data[field]
+        updated_course[field] = (
+            value.strip()
+            if field in {"title", "description"}
+            else value
+        )
 
-    return jsonify(updated_course), 200
+    update_course(course_id, updated_course)
+    changes = [
+        f'"{field}" to {json.dumps(updated_course[field], ensure_ascii=False)}'
+        for field in updated_fields
+    ]
+    if len(changes) == 1:
+        message_changes = changes[0]
+    else:
+        message_changes = ", ".join(changes[:-1]) + " and " + changes[-1]
+
+    return jsonify(f"Successfully updated {message_changes}."), 200
+
+
+@courses_bp.put("/<int:course_id>")
+def replace_course(course_id):
+    return update_course_fields(course_id, partial=False)
 
 
 @courses_bp.patch("/<int:course_id>")
 def partially_update_course(course_id):
-    existing_course = find_course(course_id)
-
-    if existing_course is None:
-        return jsonify({"error": "Course not found"}), 404
-
-    data = request.get_json(silent=True)
-    validation_error = validate_course_data(data, partial=True)
-
-    if validation_error:
-        return jsonify({"error": validation_error}), 400
-
-    updated_course = existing_course.copy()
-
-    for field in REQUIRED_FIELDS:
-        if field in data:
-            value = data[field]
-            updated_course[field] = (
-                value.strip()
-                if field in {"title", "description"}
-                else value
-            )
-
-    update_course(course_id, updated_course)
-
-    return jsonify(updated_course), 200
+    return update_course_fields(course_id, partial=True)
 
 
 @courses_bp.delete("/<int:course_id>")
