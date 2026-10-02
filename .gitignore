@@ -1,3 +1,7 @@
 __pycache__/
 app/__pycache__/
 *.pyc
+.vscode/
+.venv/
+.pytest_cache/
+notes.txt
