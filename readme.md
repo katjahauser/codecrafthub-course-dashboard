@@ -137,13 +137,7 @@ Returns the total number of courses currently stored.
 curl http://127.0.0.1:5000/api/courses/stats
 ```
 
-Returns `200` with the course count as `total_courses`, for example:
-
-```json
-{
-	"total_courses": 3
-}
-```
+Returns `200` with a message containing the total number of courses. 
 
 
 ## 6. Error Codes

@@ -120,7 +120,7 @@ def get_courses():
 
 @courses_bp.get("/stats")
 def get_course_stats():
-    return jsonify({"total_courses": len(read_courses())}), 200
+    return jsonify(f"The total number of courses is {len(read_courses())}."), 200
 
 
 @courses_bp.get("/<int:course_id>")

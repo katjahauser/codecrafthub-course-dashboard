@@ -193,14 +193,14 @@ def test_get_course_stats_returns_total_count(client):
     response = client.get("/api/courses/stats")
 
     assert response.status_code == 200
-    assert response.get_json() == {"total_courses": 3}
+    assert response.get_json() == "The total number of courses is 3."
 
 
 def test_get_course_stats_returns_zero_for_empty_collection(client):
     response = client.get("/api/courses/stats")
 
     assert response.status_code == 200
-    assert response.get_json() == {"total_courses": 0}
+    assert response.get_json() == "The total number of courses is 0."
 
 
 def test_get_courses_with_invalid_command_fails(client):
