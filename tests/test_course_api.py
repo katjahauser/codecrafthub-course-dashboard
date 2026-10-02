@@ -185,22 +185,41 @@ def test_get_all_courses_succeeds(client):
 
 def test_get_course_stats_returns_total_count(client):
     json_service.write_courses([
-        existing_course(id=1),
-        existing_course(id=2, title="Second Course"),
-        existing_course(id=3, title="Third Course"),
+        existing_course(id=1, status="Not started"),
+        existing_course(id=2, title="Second Course", status="In progress"),
+        existing_course(id=3, title="Third Course", status="Completed"),
     ])
 
     response = client.get("/api/courses/stats")
 
     assert response.status_code == 200
-    assert response.get_json() == "The total number of courses is 3."
+    assert response.get_json() == (
+        "The total number of courses is 3. Course counts by status: "
+        "Not started: 1, In progress: 1, Completed: 1."
+    )
 
 
 def test_get_course_stats_returns_zero_for_empty_collection(client):
     response = client.get("/api/courses/stats")
 
     assert response.status_code == 200
-    assert response.get_json() == "The total number of courses is 0."
+    assert response.get_json() == (
+        "The total number of courses is 0. Course counts by status: "
+        "Not started: 0, In progress: 0, Completed: 0."
+    )
+
+
+def test_get_course_stats_errors_when_status_counts_do_not_cover_all_courses(client):
+    json_service.write_courses([
+        existing_course(id=1, status="Archived"),
+    ])
+
+    response = client.get("/api/courses/stats")
+
+    assert response.status_code == 500
+    assert response.get_json() == {
+        "error": "Course status counts do not match the total course count"
+    }
 
 
 def test_get_courses_with_invalid_command_fails(client):

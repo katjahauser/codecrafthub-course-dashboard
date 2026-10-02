@@ -24,6 +24,10 @@ class CourseStatus(str, Enum):
     COMPLETED = "Completed"
 
 
+class CourseStatsError(Exception):
+    pass
+
+
 ALLOWED_STATUSES = {status.value for status in CourseStatus}
 TITLE_PATTERN = re.compile(r"[A-Za-z0-9 /()-]+")
 DESCRIPTION_PATTERN = re.compile(r"[A-Za-z0-9 .,!?'\"/()-]+")
@@ -112,6 +116,11 @@ def handle_course_storage_error(error):
     return jsonify({"error": str(error)}), 500
 
 
+@courses_bp.app_errorhandler(CourseStatsError)
+def handle_course_stats_error(error):
+    return jsonify({"error": str(error)}), 500
+
+
 @courses_bp.get("")
 @courses_bp.get("/")
 def get_courses():
@@ -120,7 +129,28 @@ def get_courses():
 
 @courses_bp.get("/stats")
 def get_course_stats():
-    return jsonify(f"The total number of courses is {len(read_courses())}."), 200
+    courses = read_courses()
+    status_counts = {status.value: 0 for status in CourseStatus}
+
+    for course in courses:
+        status = course.get("status")
+        if isinstance(status, str) and status in status_counts:
+            status_counts[status] += 1
+
+    total_courses = len(courses)
+    if sum(status_counts.values()) != total_courses:
+        raise CourseStatsError(
+            "Course status counts do not match the total course count"
+        )
+
+    status_summary = ", ".join(
+        f"{status.value}: {status_counts[status.value]}"
+        for status in CourseStatus
+    )
+    return jsonify(
+        f"The total number of courses is {total_courses}. "
+        f"Course counts by status: {status_summary}."
+    ), 200
 
 
 @courses_bp.get("/<int:course_id>")

@@ -131,13 +131,19 @@ Returns `200` when deleted and a message indicating the deleted course. The rema
 
 Endpoint: `GET /api/courses/stats`
 
-Returns the total number of courses currently stored.
+Returns the total number of courses currently stored, along with counts for each valid status.
 
 ```bash
 curl http://127.0.0.1:5000/api/courses/stats
 ```
 
-Returns `200` with a message containing the total number of courses. 
+Returns `200` with a message containing the total and per-status counts, for example:
+
+```text
+The total number of courses is 3. Course counts by status: Not started: 1, In progress: 1, Completed: 1.
+```
+
+If the per-status counts do not add up to the total (for example, if stored course data has an invalid status), the endpoint returns `500` with an error message.
 
 
 ## 6. Error Codes
