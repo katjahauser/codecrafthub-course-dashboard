@@ -152,7 +152,7 @@ If the per-status counts do not add up to the total (for example, if stored cour
 * `404 Not Found`: the requested course or endpoint does not exist.
 * `405 Method Not Allowed`: the endpoint exists but does not support the requested HTTP method.
 * `409 Conflict`: a course with the same title and description already exists.
-* `500 Internal Server Error`: course data could not be read from or written to storage.
+* `500 Internal Server Error`: course data could not be read from or written to storage, or per-status statistics do not sum to the total course count.
 
 
 ## 7. Testing Instructions
