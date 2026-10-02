@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 import pytest
 
@@ -18,7 +19,7 @@ COURSE_FIELDS = (
 
 def valid_course(**overrides):
     course = {
-        "title": "New Course-101 (Basics)",
+        "title": "New Course-101/Python (Basics)",
         "description": "Learn Python, Flask! Build/API?",
         "target_date": "2026-12-20",
         "status": "Not started",
@@ -59,7 +60,7 @@ def test_add_course_with_all_fields_succeeds(client):
     courses = json_service.read_courses()
     assert len(courses) == 1
     assert courses[0]["id"] == 1
-    assert courses[0]["title"] == "New Course-101 (Basics)"
+    assert courses[0]["title"] == "New Course-101/Python (Basics)"
     assert tuple(courses[0]) == COURSE_FIELDS
     datetime.strptime(courses[0]["created_at"], "%Y-%m-%d %H:%M:%S")
 
@@ -97,7 +98,15 @@ def test_add_course_with_existing_title_fails(client):
 
 ILLEGAL_COURSE_CASES = [
     pytest.param({"target_date": "2026-02-30"}, id="invalid date"),
+    pytest.param({"target_date": "20260228"}, id="date not hyphenated"),
     pytest.param({"status": "Paused"}, id="invalid status"),
+    pytest.param({"title": "New@Course"}, id="title special character"),
+    pytest.param({"title": "A" * 257}, id="title too long"),
+    pytest.param(
+        {"description": "A description with @ character."},
+        id="description special character",
+    ),
+    pytest.param({"description": "A" * 1025}, id="description too long"),
 ]
 
 
@@ -193,6 +202,41 @@ def test_missing_courses_file_is_created(client):
     assert response.status_code == 200
     assert response.get_json() == []
     assert json_service.DATA_FILE.exists()
+
+
+def test_read_file_error_returns_json_error(client, tmp_path, monkeypatch):
+    courses_directory = tmp_path / "courses-directory"
+    courses_directory.mkdir()
+    monkeypatch.setattr(json_service, "DATA_FILE", courses_directory)
+
+    response = client.get("/api/courses")
+
+    assert response.status_code == 500
+    assert response.get_json() == {"error": "Unable to read course data"}
+
+
+def test_write_file_error_returns_json_error(client, tmp_path, monkeypatch):
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("file", encoding="utf-8")
+    monkeypatch.setattr(
+        json_service,
+        "DATA_FILE",
+        blocked_parent / "courses.json",
+    )
+
+    response = client.post("/api/courses", json=valid_course())
+
+    assert response.status_code == 500
+    assert response.get_json() == {"error": "Unable to write course data"}
+
+
+def test_course_file_contents_follow_title_and_description_rules():
+    title_pattern = re.compile(r"[A-Za-z0-9 /()-]+")
+    description_pattern = re.compile(r"[A-Za-z0-9 .,!?'\"/()-]+")
+
+    for course in json_service.read_courses():
+        assert title_pattern.fullmatch(course["title"])
+        assert description_pattern.fullmatch(course["description"])
 
 
 def test_delete_keeps_course_ids_consecutive(client):

@@ -1,8 +1,11 @@
+import re
 from datetime import date
+from enum import Enum
 
 from flask import Blueprint, jsonify, request
 
 from .json_service import (
+    CourseStorageError,
     create_course,
     delete_course,
     find_course,
@@ -13,11 +16,19 @@ from .json_service import (
 
 courses_bp = Blueprint("courses", __name__)
 
-ALLOWED_STATUSES = {
-    "Not started",
-    "In progress",
-    "Completed",
-}
+
+class CourseStatus(str, Enum):
+    NOT_STARTED = "Not started"
+    IN_PROGRESS = "In progress"
+    COMPLETED = "Completed"
+
+
+ALLOWED_STATUSES = {status.value for status in CourseStatus}
+TITLE_PATTERN = re.compile(r"[A-Za-z0-9 /()-]+")
+DESCRIPTION_PATTERN = re.compile(r"[A-Za-z0-9 .,!?'\"/()-]+")
+DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+MAX_TITLE_LENGTH = 256
+MAX_DESCRIPTION_LENGTH = 1024
 
 REQUIRED_FIELDS = {
     "title",
@@ -41,30 +52,53 @@ def validate_course_data(data, partial=False):
             )
 
     if "title" in data:
-        if not isinstance(data["title"], str) or not data["title"].strip():
+        title = data["title"]
+        if not isinstance(title, str) or not title.strip():
             return "title must be a non-empty string"
+        if len(title) > MAX_TITLE_LENGTH or not TITLE_PATTERN.fullmatch(title):
+            return (
+                "title may contain only letters, numbers, spaces, and hyphens "
+                f"and must be at most {MAX_TITLE_LENGTH} characters"
+            )
 
     if "description" in data:
-        if (
-            not isinstance(data["description"], str)
-            or not data["description"].strip()
-        ):
+        description = data["description"]
+        if not isinstance(description, str) or not description.strip():
             return "description must be a non-empty string"
+        if (
+            len(description) > MAX_DESCRIPTION_LENGTH
+            or not DESCRIPTION_PATTERN.fullmatch(description)
+        ):
+            return (
+                "description contains unsupported characters or exceeds "
+                f"{MAX_DESCRIPTION_LENGTH} characters"
+            )
 
     if "target_date" in data:
+        target_date = data["target_date"]
+        if (
+            not isinstance(target_date, str)
+            or not DATE_PATTERN.fullmatch(target_date)
+        ):
+            return "target_date must use YYYY-MM-DD format"
         try:
-            date.fromisoformat(data["target_date"])
+            date.fromisoformat(target_date)
         except (TypeError, ValueError):
             return "target_date must use YYYY-MM-DD format"
 
     if "status" in data:
-        if data["status"] not in ALLOWED_STATUSES:
+        if not isinstance(data["status"], str) or data["status"] not in ALLOWED_STATUSES:
             return (
                 "status must be one of: "
                 + ", ".join(sorted(ALLOWED_STATUSES))
             )
 
     return None
+
+
+@courses_bp.app_errorhandler(CourseStorageError)
+def handle_course_storage_error(error):
+    return jsonify({"error": str(error)}), 500
 
 
 @courses_bp.get("")

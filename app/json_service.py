@@ -19,6 +19,10 @@ COURSE_FIELDS = (
 )
 
 
+class CourseStorageError(Exception):
+    pass
+
+
 def order_course(course):
     ordered_course = {
         field: course[field]
@@ -39,15 +43,25 @@ def read_courses():
         write_courses([])
         return []
 
-    with DATA_FILE.open("r", encoding="utf-8") as file:
-        return [order_course(course) for course in json.load(file)]
+    try:
+        with DATA_FILE.open("r", encoding="utf-8") as file:
+            courses = json.load(file)
+        if not isinstance(courses, list) or not all(
+            isinstance(course, dict) for course in courses
+        ):
+            raise ValueError("Course data must be a JSON array of objects")
+        return [order_course(course) for course in courses]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as error:
+        raise CourseStorageError("Unable to read course data") from error
 
 
 def write_courses(courses):
-    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-    with DATA_FILE.open("w", encoding="utf-8") as file:
-        json.dump([order_course(course) for course in courses], file, indent=2)
+    try:
+        DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with DATA_FILE.open("w", encoding="utf-8") as file:
+            json.dump([order_course(course) for course in courses], file, indent=2)
+    except (OSError, TypeError, ValueError) as error:
+        raise CourseStorageError("Unable to write course data") from error
 
 
 def _renumber_courses(courses):
