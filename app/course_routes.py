@@ -118,6 +118,11 @@ def get_courses():
     return jsonify(read_courses()), 200
 
 
+@courses_bp.get("/stats")
+def get_course_stats():
+    return jsonify({"total_courses": len(read_courses())}), 200
+
+
 @courses_bp.get("/<int:course_id>")
 def get_course(course_id):
     course = find_course(course_id)

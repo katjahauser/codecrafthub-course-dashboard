@@ -183,6 +183,26 @@ def test_get_all_courses_succeeds(client):
     assert response.get_json() == [expected]
 
 
+def test_get_course_stats_returns_total_count(client):
+    json_service.write_courses([
+        existing_course(id=1),
+        existing_course(id=2, title="Second Course"),
+        existing_course(id=3, title="Third Course"),
+    ])
+
+    response = client.get("/api/courses/stats")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"total_courses": 3}
+
+
+def test_get_course_stats_returns_zero_for_empty_collection(client):
+    response = client.get("/api/courses/stats")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"total_courses": 0}
+
+
 def test_get_courses_with_invalid_command_fails(client):
     response = client.get("/api/unknown-courses")
 

@@ -14,6 +14,7 @@ It is the final project in the IBM Coursera Course "Generative AI: Elevate your 
 - Validate titles, descriptions, dates, and course statuses.
 - Generate a `created_at` timestamp when a course is created.
 - Create the course data file automatically when it is missing.
+- Get course statistics (total number of courses and number of courses by status).
 
 Course objects contain `id`, `title`, `description`, `target_date`, `status`, and `created_at`. Valid statuses are `Not started`, `In progress`, and `Completed`. Dates use `YYYY-MM-DD`; timestamps use `YYYY-MM-DD HH:MM:SS`. Course records are stored in `api/courses/courses.json`.
 
@@ -124,6 +125,25 @@ curl -X DELETE http://127.0.0.1:5000/api/courses/1
 ```
 
 Returns `200` when deleted and a message indicating the deleted course. The remaining course IDs are renumbered consecutively with the last course replacing the deleted one.
+
+
+### Get course statistics
+
+Endpoint: `GET /api/courses/stats`
+
+Returns the total number of courses currently stored.
+
+```bash
+curl http://127.0.0.1:5000/api/courses/stats
+```
+
+Returns `200` with the course count as `total_courses`, for example:
+
+```json
+{
+	"total_courses": 3
+}
+```
 
 
 ## 6. Error Codes
