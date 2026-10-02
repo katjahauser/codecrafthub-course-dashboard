@@ -22,7 +22,7 @@ ALLOWED_STATUSES = {
 REQUIRED_FIELDS = {
     "title",
     "description",
-    "targetEndDate",
+    "target_date",
     "status",
 }
 
@@ -51,11 +51,11 @@ def validate_course_data(data, partial=False):
         ):
             return "description must be a non-empty string"
 
-    if "targetEndDate" in data:
+    if "target_date" in data:
         try:
-            date.fromisoformat(data["targetEndDate"])
+            date.fromisoformat(data["target_date"])
         except (TypeError, ValueError):
-            return "targetEndDate must use YYYY-MM-DD format"
+            return "target_date must use YYYY-MM-DD format"
 
     if "status" in data:
         if data["status"] not in ALLOWED_STATUSES:
@@ -68,11 +68,12 @@ def validate_course_data(data, partial=False):
 
 
 @courses_bp.get("")
+@courses_bp.get("/")
 def get_courses():
     return jsonify(read_courses()), 200
 
 
-@courses_bp.get("/<course_id>")
+@courses_bp.get("/<int:course_id>")
 def get_course(course_id):
     course = find_course(course_id)
 
@@ -83,6 +84,7 @@ def get_course(course_id):
 
 
 @courses_bp.post("")
+@courses_bp.post("/")
 def add_course():
     data = request.get_json(silent=True)
     validation_error = validate_course_data(data)
@@ -93,7 +95,7 @@ def add_course():
     course = {
         "title": data["title"].strip(),
         "description": data["description"].strip(),
-        "targetEndDate": data["targetEndDate"],
+        "target_date": data["target_date"],
         "status": data["status"],
     }
 
@@ -104,7 +106,7 @@ def add_course():
     return jsonify(course), 201
 
 
-@courses_bp.put("/<course_id>")
+@courses_bp.put("/<int:course_id>")
 def replace_course(course_id):
     existing_course = find_course(course_id)
 
@@ -121,8 +123,9 @@ def replace_course(course_id):
         "id": course_id,
         "title": data["title"].strip(),
         "description": data["description"].strip(),
-        "targetEndDate": data["targetEndDate"],
+        "target_date": data["target_date"],
         "status": data["status"],
+        "created_at": existing_course["created_at"],
     }
 
     updated_course = update_course(course_id, updated_course)
@@ -130,7 +133,7 @@ def replace_course(course_id):
     return jsonify(updated_course), 200
 
 
-@courses_bp.patch("/<course_id>")
+@courses_bp.patch("/<int:course_id>")
 def partially_update_course(course_id):
     existing_course = find_course(course_id)
 
@@ -159,7 +162,7 @@ def partially_update_course(course_id):
     return jsonify(updated_course), 200
 
 
-@courses_bp.delete("/<course_id>")
+@courses_bp.delete("/<int:course_id>")
 def remove_course(course_id):
     deleted = delete_course(course_id)
     if not deleted:

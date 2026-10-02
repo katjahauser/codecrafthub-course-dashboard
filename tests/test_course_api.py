@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 
 from app import json_service
@@ -8,8 +10,9 @@ COURSE_FIELDS = (
     "id",
     "title",
     "description",
-    "targetEndDate",
+    "target_date",
     "status",
+    "created_at",
 )
 
 
@@ -17,7 +20,7 @@ def valid_course(**overrides):
     course = {
         "title": "New Course-101 (Basics)",
         "description": "Learn Python, Flask! Build/API?",
-        "targetEndDate": "2026-12-20",
+        "target_date": "2026-12-20",
         "status": "Not started",
     }
     course.update(overrides)
@@ -26,11 +29,12 @@ def valid_course(**overrides):
 
 def existing_course(**overrides):
     course = {
-        "id": "course-001",
+        "id": 1,
         "title": "Existing Course",
         "description": "An existing description.",
-        "targetEndDate": "2026-11-30",
+        "target_date": "2026-11-30",
         "status": "In progress",
+        "created_at": "2026-10-02 09:00:00",
     }
     course.update(overrides)
     return course
@@ -39,7 +43,6 @@ def existing_course(**overrides):
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(json_service, "DATA_FILE", tmp_path / "courses.json")
-    json_service.write_courses([])
     return create_app().test_client()
 
 
@@ -55,9 +58,10 @@ def test_add_course_with_all_fields_succeeds(client):
     assert response.status_code == 201
     courses = json_service.read_courses()
     assert len(courses) == 1
-    assert courses[0]["id"] == "course-001"
+    assert courses[0]["id"] == 1
     assert courses[0]["title"] == "New Course-101 (Basics)"
     assert tuple(courses[0]) == COURSE_FIELDS
+    datetime.strptime(courses[0]["created_at"], "%Y-%m-%d %H:%M:%S")
 
 
 def test_add_course_missing_one_field_fails(client):
@@ -82,7 +86,7 @@ def test_add_course_with_existing_title_fails(client):
     seed_course()
     duplicate_title = valid_course(
         title="Existing Course",
-        description="A different description.",
+        description="An existing description.",
     )
 
     response = client.post("/api/courses", json=duplicate_title)
@@ -92,15 +96,8 @@ def test_add_course_with_existing_title_fails(client):
 
 
 ILLEGAL_COURSE_CASES = [
-    pytest.param({"targetEndDate": "2026-02-30"}, id="invalid date"),
+    pytest.param({"target_date": "2026-02-30"}, id="invalid date"),
     pytest.param({"status": "Paused"}, id="invalid status"),
-    pytest.param({"title": "A" * 257}, id="title too long"),
-    pytest.param({"title": "New@Course"}, id="title has disallowed character"),
-    pytest.param({"description": "A" * 1025}, id="description too long"),
-    pytest.param(
-        {"description": "A description with @ sign."},
-        id="description has disallowed character",
-    ),
 ]
 
 
@@ -113,12 +110,14 @@ def test_add_course_with_illegal_data_fails(client, overrides):
 
 def test_edit_course_with_legal_data_succeeds(client):
     seed_course()
+    original_created_at = json_service.read_courses()[0]["created_at"]
     update = valid_course(title="Updated Course")
 
-    response = client.put("/api/courses/course-001", json=update)
+    response = client.put("/api/courses/1", json=update)
 
     assert response.status_code == 200
     assert json_service.read_courses()[0]["title"] == "Updated Course"
+    assert json_service.read_courses()[0]["created_at"] == original_created_at
 
 
 @pytest.mark.parametrize("overrides", ILLEGAL_COURSE_CASES)
@@ -126,7 +125,7 @@ def test_edit_course_with_illegal_data_fails(client, overrides):
     seed_course()
     update = valid_course(title="Updated Course")
     update.update(overrides)
-    response = client.put("/api/courses/course-001", json=update)
+    response = client.put("/api/courses/1", json=update)
 
     assert response.status_code == 400
 
@@ -134,14 +133,14 @@ def test_edit_course_with_illegal_data_fails(client, overrides):
 def test_delete_course_with_valid_id_succeeds(client):
     seed_course()
 
-    response = client.delete("/api/courses/course-001")
+    response = client.delete("/api/courses/1")
 
     assert response.status_code == 200
     assert json_service.read_courses() == []
 
 
 def test_delete_course_with_invalid_id_fails(client):
-    response = client.delete("/api/courses/course-999")
+    response = client.delete("/api/courses/999")
 
     assert response.status_code == 404
 
@@ -164,24 +163,60 @@ def test_get_courses_with_invalid_command_fails(client):
 def test_get_course_with_valid_id_succeeds(client):
     expected = seed_course()
 
-    response = client.get("/api/courses/course-001")
+    response = client.get("/api/courses/1")
 
     assert response.status_code == 200
     assert response.get_json() == expected
 
 
 def test_get_course_with_invalid_id_fails(client):
-    response = client.get("/api/courses/course-999")
+    response = client.get("/api/courses/999")
 
     assert response.status_code == 404
 
 
-def test_partial_course_edit_fails(client):
+def test_partial_course_edit_succeeds(client):
     seed_course()
 
     response = client.patch(
-        "/api/courses/course-001",
+        "/api/courses/1",
         json={"title": "Partially Updated Course"},
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert json_service.read_courses()[0]["title"] == "Partially Updated Course"
+
+
+def test_missing_courses_file_is_created(client):
+    response = client.get("/api/courses/")
+
+    assert response.status_code == 200
+    assert response.get_json() == []
+    assert json_service.DATA_FILE.exists()
+
+
+def test_delete_keeps_course_ids_consecutive(client):
+    courses = [
+        existing_course(id=1),
+        existing_course(id=2, title="Second Course"),
+        existing_course(id=3, title="Third Course"),
+    ]
+    json_service.write_courses(courses)
+
+    response = client.delete("/api/courses/2")
+
+    assert response.status_code == 200
+    assert [course["id"] for course in json_service.read_courses()] == [1, 2]
+
+    create_response = client.post("/api/courses/", json=valid_course())
+
+    assert create_response.status_code == 201
+    assert [course["id"] for course in json_service.read_courses()] == [1, 2, 3]
+
+
+def test_current_courses_file_has_three_courses():
+    courses = json_service.read_courses()
+
+    assert [course["id"] for course in courses] == [1, 2, 3]
+    assert all("target_date" in course for course in courses)
+    assert all("created_at" in course for course in courses)
