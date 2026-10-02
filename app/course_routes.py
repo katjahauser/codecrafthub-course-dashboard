@@ -151,14 +151,14 @@ def add_course():
     return jsonify(course), 201
 
 
-def update_course_fields(course_id, partial):
+def update_course_fields(course_id):
     existing_course = find_course(course_id)
 
     if existing_course is None:
         return jsonify({"error": "Course not found"}), 404
 
     data = request.get_json(silent=True)
-    validation_error = validate_course_data(data, partial=partial)
+    validation_error = validate_course_data(data, partial=True)
 
     if validation_error:
         return jsonify({"error": validation_error}), 400
@@ -191,12 +191,12 @@ def update_course_fields(course_id, partial):
 
 @courses_bp.put("/<int:course_id>")
 def replace_course(course_id):
-    return update_course_fields(course_id, partial=False)
+    return update_course_fields(course_id)
 
 
 @courses_bp.patch("/<int:course_id>")
 def partially_update_course(course_id):
-    return update_course_fields(course_id, partial=True)
+    return update_course_fields(course_id)
 
 
 @courses_bp.delete("/<int:course_id>")

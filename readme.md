@@ -88,15 +88,15 @@ Returns `200` and the course, or `404` if it does not exist.
 
 Endpoint: `PUT /api/courses/<id>` 
 
-`PUT` requires all editable fields: `title`, `description`, `target_date`, and `status`. The server-managed `id` and `created_at` fields cannot be set manually.
+`PUT` accepts any non-empty subset of editable fields: `title`, `description`, `target_date`, and `status`. Omitted fields remain unchanged. The server-managed `id` and `created_at` fields cannot be set manually.
 
 ```bash
 curl -X PUT http://127.0.0.1:5000/api/courses/1 \
 	-H 'Content-Type: application/json' \
-	-d '{"title":"Python Basics","description":"Learn Python/API basics.","target_date":"2027-02-15","status":"In progress"}'
+	-d '{"title":"Python Basics"}'
 ```
 
-Returns `200` and an update message naming all supplied field values, or `400` if required fields are missing or server-managed fields were included in the request.
+Returns `200` and an update message naming the supplied field values, or `400` if no editable fields were supplied or server-managed fields were included in the request.
 
 
 ### Partially update a course

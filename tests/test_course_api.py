@@ -135,15 +135,18 @@ def test_edit_course_with_legal_data_succeeds(client):
     assert json_service.read_courses()[0]["created_at"] == original_created_at
 
 
-def test_put_with_missing_editable_fields_fails(client):
-    seed_course()
+def test_put_with_missing_editable_fields_updates_only_supplied_fields(client):
+    original_course = seed_course()
 
     response = client.put("/api/courses/1", json={"title": "Updated Course"})
 
-    assert response.status_code == 400
-    assert response.get_json() == {
-        "error": "Missing required fields: description, status, target_date"
-    }
+    assert response.status_code == 200
+    assert response.get_json() == 'Successfully updated "title" to "Updated Course".'
+    updated_course = json_service.read_courses()[0]
+    assert updated_course["title"] == "Updated Course"
+    assert updated_course["description"] == original_course["description"]
+    assert updated_course["target_date"] == original_course["target_date"]
+    assert updated_course["status"] == original_course["status"]
 
 
 @pytest.mark.parametrize("overrides", ILLEGAL_COURSE_CASES)
@@ -253,10 +256,11 @@ def test_server_managed_fields_cannot_be_set(client, method, path, field, value)
     }
 
 
-def test_patch_requires_at_least_one_editable_field(client):
+@pytest.mark.parametrize("method", ["put", "patch"])
+def test_update_requires_at_least_one_editable_field(client, method):
     seed_course()
 
-    response = client.patch("/api/courses/1", json={})
+    response = getattr(client, method)("/api/courses/1", json={})
 
     assert response.status_code == 400
     assert response.get_json() == {
