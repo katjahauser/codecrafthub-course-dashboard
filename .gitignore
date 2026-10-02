@@ -5,3 +5,4 @@ app/__pycache__/
 .venv/
 .pytest_cache/
 notes.txt
+.coverage

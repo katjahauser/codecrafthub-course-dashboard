@@ -83,6 +83,19 @@ def test_add_course_missing_multiple_fields_fails(client):
     assert response.status_code == 400
 
 
+def test_add_course_with_invalid_json_body_fails(client):
+    response = client.post(
+        "/api/courses",
+        data="{invalid json",
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "error": "Request body must be a JSON object"
+    }
+
+
 def test_add_course_with_existing_title_fails(client):
     seed_course()
     duplicate_title = valid_course(
@@ -102,11 +115,16 @@ ILLEGAL_COURSE_CASES = [
     pytest.param({"status": "Paused"}, id="invalid status"),
     pytest.param({"title": "New@Course"}, id="title special character"),
     pytest.param({"title": "A" * 257}, id="title too long"),
+    pytest.param({"title": ""}, id="empty title"),
+    pytest.param({"title": 123}, id="non-string title"),
+    pytest.param({"description": ""}, id="empty description"),
+    pytest.param({"description": 123}, id="non-string description"),
     pytest.param(
         {"description": "A description with @ character."},
         id="description special character",
     ),
     pytest.param({"description": "A" * 1025}, id="description too long"),
+    pytest.param({"unexpected": "value"}, id="unsupported field"),
 ]
 
 
@@ -157,6 +175,14 @@ def test_edit_course_with_illegal_data_fails(client, overrides):
     response = client.put("/api/courses/1", json=update)
 
     assert response.status_code == 400
+
+
+@pytest.mark.parametrize("method", ["put", "patch"])
+def test_update_course_with_unknown_id_fails(client, method):
+    response = getattr(client, method)("/api/courses/999", json={"title": "Missing"})
+
+    assert response.status_code == 404
+    assert response.get_json() == {"error": "Course not found"}
 
 
 def test_delete_course_with_valid_id_succeeds(client):
@@ -326,6 +352,15 @@ def test_read_file_error_returns_json_error(client, tmp_path, monkeypatch):
     assert response.get_json() == {"error": "Unable to read course data"}
 
 
+def test_invalid_course_file_contents_returns_json_error(client):
+    json_service.DATA_FILE.write_text("{}", encoding="utf-8")
+
+    response = client.get("/api/courses")
+
+    assert response.status_code == 500
+    assert response.get_json() == {"error": "Unable to read course data"}
+
+
 def test_write_file_error_returns_json_error(client, tmp_path, monkeypatch):
     blocked_parent = tmp_path / "not-a-directory"
     blocked_parent.write_text("file", encoding="utf-8")
@@ -339,6 +374,14 @@ def test_write_file_error_returns_json_error(client, tmp_path, monkeypatch):
 
     assert response.status_code == 500
     assert response.get_json() == {"error": "Unable to write course data"}
+
+
+def test_update_course_service_returns_none_for_unknown_id(client):
+    seed_course()
+
+    result = json_service.update_course(999, existing_course(id=999))
+
+    assert result is None
 
 
 def test_course_file_contents_follow_title_and_description_rules():
