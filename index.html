@@ -109,16 +109,34 @@
     border-radius: 8px;
   }
   .stat-label {
-    color: var(--neutral-500);
     font-size: 0.82rem;
     font-weight: 600;
   }
   .stat-value {
     margin-top: 4px;
-    color: var(--neutral-900);
     font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.2;
+  }
+  .stat-item-total {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  .stat-item-not-started {
+    background: var(--neutral-100);
+    border-color: var(--neutral-200);
+    color: var(--neutral-600);
+  }
+  .stat-item-in-progress {
+    background: var(--success-light);
+    border-color: var(--success-light);
+    color: var(--success-dark);
+  }
+  .stat-item-completed {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--primary-dark);
   }
   .stats-message {
     color: var(--neutral-500);
@@ -459,7 +477,7 @@
   <!-- Course Statistics -->
   <section class="panel" aria-labelledby="statsHeading">
     <div class="panel-header">
-      <h2 id="statsHeading">Course Dashboard</h2>
+      <h2 id="statsHeading">Course Statistics</h2>
     </div>
     <div id="courseStats" class="stats-grid" aria-live="polite">
       <p class="stats-message">Loading course statistics...</p>
@@ -619,8 +637,14 @@
 
   function renderCourseStats(values) {
     var labels = ["Total courses", "Not started", "In progress", "Completed"];
+    var classes = [
+      "stat-item-total",
+      "stat-item-not-started",
+      "stat-item-in-progress",
+      "stat-item-completed"
+    ];
     statsContainer.innerHTML = values.map(function (value, index) {
-      return '<div class="stat-item">' +
+      return '<div class="stat-item ' + classes[index] + '">' +
         '<div class="stat-label">' + labels[index] + '</div>' +
         '<div class="stat-value">' + value + '</div>' +
         '</div>';
