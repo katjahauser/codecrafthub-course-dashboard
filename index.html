@@ -97,6 +97,33 @@
     padding: 3px 10px;
     border-radius: 999px;
   }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .stat-item {
+    padding: 16px;
+    background: var(--neutral-50);
+    border: 1px solid var(--neutral-200);
+    border-radius: 8px;
+  }
+  .stat-label {
+    color: var(--neutral-500);
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .stat-value {
+    margin-top: 4px;
+    color: var(--neutral-900);
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .stats-message {
+    color: var(--neutral-500);
+    font-size: 0.9rem;
+  }
 
   /* Form */
   .course-form {
@@ -369,6 +396,7 @@
   /* Responsive */
   @media (max-width: 640px) {
     .course-form { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .site-header h1 { font-size: 1.35rem; }
     .app-container { padding: 18px 12px 40px; }
     .panel { padding: 16px; }
@@ -428,6 +456,16 @@
     </form>
   </section>
 
+  <!-- Course Statistics -->
+  <section class="panel" aria-labelledby="statsHeading">
+    <div class="panel-header">
+      <h2 id="statsHeading">Course Dashboard</h2>
+    </div>
+    <div id="courseStats" class="stats-grid" aria-live="polite">
+      <p class="stats-message">Loading course statistics...</p>
+    </div>
+  </section>
+
   <!-- Course List -->
   <section class="panel">
     <div class="panel-header">
@@ -461,6 +499,7 @@
   const submitBtn = document.getElementById("submitBtn");
   const resetBtn = document.getElementById("resetFormBtn");
   const listContainer = document.getElementById("courseListContainer");
+  const statsContainer = document.getElementById("courseStats");
   const countBadge = document.getElementById("countBadge");
   const modalRoot = document.getElementById("modalRoot");
   const toastContainer = document.getElementById("toastContainer");
@@ -549,6 +588,7 @@
 
   function fetchCourses() {
     showListLoading();
+    fetchCourseStats();
     return apiRequest("GET", "").then(function (data) {
       var courses = Array.isArray(data) ? data : (data && data.courses) ? data.courses : [];
       renderCourses(courses);
@@ -558,6 +598,33 @@
       showToast("Failed to load courses: " + err.message, "error");
       showListError(err.message);
     });
+  }
+
+  function fetchCourseStats() {
+    statsContainer.innerHTML = '<p class="stats-message">Loading course statistics...</p>';
+    return apiRequest("GET", "/stats").then(function (data) {
+      var match = typeof data === "string" && data.match(
+        /^The total number of courses is (\d+)\. Course counts by status: Not started: (\d+), In progress: (\d+), Completed: (\d+)\.$/
+      );
+      if (!match) {
+        throw new Error("The server returned statistics in an unexpected format");
+      }
+      renderCourseStats(match.slice(1).map(Number));
+    }).catch(function (err) {
+      statsContainer.innerHTML =
+        '<p class="stats-message">Could not load course statistics: ' +
+        escapeHtml(err.message) + '</p>';
+    });
+  }
+
+  function renderCourseStats(values) {
+    var labels = ["Total courses", "Not started", "In progress", "Completed"];
+    statsContainer.innerHTML = values.map(function (value, index) {
+      return '<div class="stat-item">' +
+        '<div class="stat-label">' + labels[index] + '</div>' +
+        '<div class="stat-value">' + value + '</div>' +
+        '</div>';
+    }).join("");
   }
 
   function createCourse(payload) {
