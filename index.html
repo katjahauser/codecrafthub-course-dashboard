@@ -300,8 +300,8 @@
     display: inline-block;
     white-space: nowrap;
   }
-  .status-Not-Started { background: var(--neutral-100); color: var(--neutral-600); }
-  .status-In-Progress { background: var(--success-light); color: var(--success-dark); }
+  .status-Not-started { background: var(--neutral-100); color: var(--neutral-600); }
+  .status-In-progress { background: var(--success-light); color: var(--success-dark); }
   .status-Completed { background: var(--primary-light); color: var(--primary-dark); }
 
   /* Empty state */
@@ -413,8 +413,8 @@
       <div class="form-field full">
         <label for="status">Status<span class="req">*</span></label>
         <select id="status" name="status">
-          <option value="Not Started">Not Started</option>
-          <option value="In Progress">In Progress</option>
+          <option value="Not started">Not started</option>
+          <option value="In progress">In progress</option>
           <option value="Completed">Completed</option>
         </select>
         <div class="field-error" data-error-for="status"></div>
@@ -452,9 +452,9 @@
 (function () {
   "use strict";
 
-  const API_BASE = "http://localhost:5000/api/courses";
+  const API_BASE = "/api/courses";
 
-  const STATUS_VALUES = ["Not Started", "In Progress", "Completed"];
+  const STATUS_VALUES = ["Not started", "In progress", "Completed"];
 
   // ---- DOM refs ----
   const addForm = document.getElementById("addCourseForm");
@@ -652,7 +652,7 @@
 
     var title = document.createElement("div");
     title.className = "card-title";
-    title.textContent = course.name || "Untitled";
+    title.textContent = course.title || "Untitled";
 
     var desc = document.createElement("div");
     desc.className = "card-desc";
@@ -660,7 +660,7 @@
 
     var badge = document.createElement("span");
     badge.className = "status-badge " + statusClass(course.status);
-    badge.textContent = course.status || "Not Started";
+    badge.textContent = course.status || "Not started";
 
     var meta = document.createElement("div");
     meta.className = "card-meta";
@@ -746,7 +746,7 @@
       '<form id="editForm" class="course-form modal-body" novalidate>' +
       '<div class="form-field">' +
       '<label for="edit_name">Course Name<span class="req">*</span></label>' +
-      '<input type="text" id="edit_name" name="name" value="' + escapeHtml(course.name || "") + '" />' +
+      '<input type="text" id="edit_name" name="name" value="' + escapeHtml(course.title || "") + '" />' +
       '<div class="field-error" data-error-for="name"></div>' +
       '</div>' +
       '<div class="form-field full">' +
@@ -787,7 +787,7 @@
     saveBtn.addEventListener("click", function () {
       if (!validateForm(editForm)) return;
       var payload = {
-        name: editForm.elements["name"].value.trim(),
+        title: editForm.elements["name"].value.trim(),
         description: editForm.elements["description"].value.trim(),
         target_date: editForm.elements["target_date"].value,
         status: editForm.elements["status"].value
@@ -831,7 +831,7 @@
       '<div style="font-size:2rem;margin-bottom:6px">\u26a0\ufe0f</div>' +
       '<p style="font-weight:600;color:var(--neutral-800)">Are you sure?</p>' +
       '<p style="color:var(--neutral-600);font-size:0.9rem;margin-top:6px">' +
-      '"<span style="font-weight:600">' + escapeHtml(course.name || "this course") + '</span>" will be permanently removed.' +
+      '"<span style="font-weight:600">' + escapeHtml(course.title || "this course") + '</span>" will be permanently removed.' +
       '</p>' +
       '</div>' +
       '<div class="modal-footer">' +
@@ -864,7 +864,7 @@
       return;
     }
     var payload = {
-      name: addForm.elements["name"].value.trim(),
+      title: addForm.elements["name"].value.trim(),
       description: addForm.elements["description"].value.trim(),
       target_date: addForm.elements["target_date"].value,
       status: addForm.elements["status"].value

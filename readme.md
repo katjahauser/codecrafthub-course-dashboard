@@ -42,6 +42,7 @@ python run.py
 ```
 
 The development server is available at `http://127.0.0.1:5000`.
+Open that address in your browser to use the frontend. The page is served by Flask and calls the API on the same origin; do not open `index.html` directly.
 
 
 ## 5. API Endpoints

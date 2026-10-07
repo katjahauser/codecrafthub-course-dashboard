@@ -65,6 +65,13 @@ def test_add_course_with_all_fields_succeeds(client):
     datetime.strptime(courses[0]["created_at"], "%Y-%m-%d %H:%M:%S")
 
 
+def test_homepage_serves_frontend(client):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert b"CodeCraftHub: Your Learning Management Platform" in response.data
+
+
 def test_add_course_missing_one_field_fails(client):
     course = valid_course()
     del course["status"]
