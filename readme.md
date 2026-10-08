@@ -2,9 +2,17 @@
 
 ## 1. Project Overview and Description
 
-CodeCraftHub is a small Flask REST API for managing software developer courses. 
+CodeCraftHub is a small Flask REST API with a simple dashboard for managing software developer courses. 
+
+### 1.1 CodeCraftHub is the final project of a Coursera course 
 
 It is the final project in the IBM Coursera Course "Generative AI: Elevate your Software Development Career" and was implemented to serve as both portfolio project and as familiarization with CoPilot in VSCode. 
+
+The code published in this repository does not meet the requirements to pass the Final Project on Coursera out of the box as they, essentially, ask for a different approach to reach the same functionality. 
+
+### 1.2. Transparency of Usage of GenAI
+
+One of my main aims with this project was the familiarization with GitHub CoPilot. Thus, the code was mostly written by CoPilot, with heavy oversight and steering from my side. 
 
 
 ## 2. Features
